@@ -19,15 +19,8 @@ DrumTempo is a streamlined World of Warcraft addon designed to optimize the use 
 
 ## Slash Commands
 
-* `/pdrums` - Opens the configuration menu.
+* `/drumtempo` - Opens the configuration menu.
 
-## File Structure
-
-* `DrumTempo.lua`: Core logic and event handling.
-* `DrumData.lua`: Item and Spell database for all TBC-era drums.
-* `Frames.lua`: UI construction and visual state management.
-* `Options.lua`: Configuration panel and database settings.
-* `Layouts/SimpleDrum.lua`: The primary display layout.
 
 ## Technical Details
 
