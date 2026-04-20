@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- DrumTempo - Default Drum Layout (v8.0)
+-- DrumTempo - Default Drum Layout (v8.1)
 -------------------------------------------------------------------------------
 local addonName, addonTable = ...
 
@@ -14,7 +14,7 @@ local Layout = {
 -- Visual Logic
 -------------------------------------------------------------------------------
 function Layout:Drummed(drum, drummer)
-    if not drum or not self.frame then return end
+    if not drum or not self.frame or not self.frame.mainframe then return end
     
     -- 1. Start the 30s visual cooldown clock (the sweeping overlay)
     self.frame:SetCooldown(drum)
@@ -30,7 +30,9 @@ function Layout:Drummed(drum, drummer)
 end
 
 function Layout:UpdateCount()
-    if not self.frame or not DrumTempo.db then return end
+    -- SAFETY GATE: Prevent errors if frame objects aren't initialized yet
+    if not self.frame or not self.frame.mainframe then return end
+    if not DrumTempo.db then return end
     
     -- Pull the current drum ID directly from the profile to ensure correct count
     local itemID = DrumTempo.db.profile.drumwatched
@@ -48,12 +50,12 @@ function Layout:Load()
     
     if self.frame then
         -- Ensure text elements are visible (in case we switched from Minimal)
-        self.frame.toptext:Show()
-        self.frame.bottomtext:Show()
+        if self.frame.toptext then self.frame.toptext:Show() end
+        if self.frame.bottomtext then self.frame.bottomtext:Show() end
 
         -- Delay the initial item setup by 0.5 seconds to allow cache to warm up
         C_Timer.After(0.5, function()
-            if self.frame then
+            if self.frame and self.frame.mainframe then
                 self:UpdateCount()
                 self.frame:SetItem(DrumTempo.db.profile.drumwatched)
                 self.frame:LoadPos()
@@ -68,10 +70,17 @@ end
 
 function Layout:Unload()
     if self.frame then
+        -- Safely unregister and clear scripts
         if self.frame.mainframe then
             self.frame.mainframe:UnregisterEvent("BAG_UPDATE")
             self.frame.mainframe:SetScript("OnEvent", nil)
+            
+            -- Clear cooldown scripts if they were added
+            if self.frame.mainframe.cooldown then
+                self.frame.mainframe.cooldown:SetScript("OnCooldownDone", nil)
+            end
         end
+
         DrumTempo:ReleaseFrame(self.frame)
         self.frame = nil
     end
@@ -95,6 +104,6 @@ end
 if DrumTempo and DrumTempo.RegisterLayout then
     DrumTempo:RegisterLayout(Layout)
 else
-    -- THIS IS THE MISSING LINK:
+    -- Fallback for early loading if Core isn't initialized yet
     addonTable.DefaultDrumLayout = Layout
 end

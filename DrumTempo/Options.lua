@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- DrumTempo - Options (v8.0)
+-- DrumTempo - Options (v8.1)
 -------------------------------------------------------------------------------
 local addonName, addonTable = ...
 local DrumTempo = addonTable.Core or LibStub("AceAddon-3.0"):GetAddon("DrumTempo")
@@ -40,12 +40,20 @@ local function makeFontGroup(displayName, order, fieldKey, sizeKey, frameKey)
                 set = function(_, value)
                     DrumTempo.db.profile[sizeKey] = value
                     for _, v in pairs(DrumTempo.frames) do
-                        local targetMap = { ["NbItemtext"] = "count", ["centertext"] = "bottomtext" }
+                        local targetMap = { 
+                            ["NbItemtext"] = "count", 
+                            ["centertext"] = "bottomtext",
+                            ["toptext"]    = "toptext" 
+                        }
                         local target = targetMap[frameKey] or frameKey
                         
-                        if v[target] then
-                            local fontPath, _, flags = v[target]:GetFont()
-                            v[target]:SetFont(fontPath, value, flags or "OUTLINE")
+                        -- CRITICAL FIX: Check the base frame AND the mainframe child
+                        -- Addons often nest the 'count' inside the icon frame
+                        local fontString = v[target] or (v.mainframe and v.mainframe[target])
+                        
+                        if fontString and fontString.SetFont then
+                            local fontPath, _, flags = fontString:GetFont()
+                            fontString:SetFont(fontPath, value, flags or "OUTLINE")
                         end
                     end
                 end,
@@ -58,14 +66,21 @@ local function makeFontGroup(displayName, order, fieldKey, sizeKey, frameKey)
                 get = function() return DrumTempo.db.profile[fieldKey] or "Fonts\\FRIZQT__.TTF" end,
                 set = function(_, value)
                     local fontPath = (SharedMedia and SharedMedia:Fetch("font", value)) or "Fonts\\FRIZQT__.TTF"
-                     DrumTempo.db.profile[fieldKey] = value
+                    DrumTempo.db.profile[fieldKey] = value
                     
                     for _, v in pairs(DrumTempo.frames) do
-                        local targetMap = { ["NbItemtext"] = "count", ["centertext"] = "bottomtext" }
+                        local targetMap = { 
+                            ["NbItemtext"] = "count", 
+                            ["centertext"] = "bottomtext",
+                            ["toptext"]    = "toptext" 
+                        }
                         local target = targetMap[frameKey] or frameKey
-                        if v[target] then
-                            local _, size, flags = v[target]:GetFont()
-                            v[target]:SetFont(fontPath, size, flags or "OUTLINE")
+                        
+                        local fontString = v[target] or (v.mainframe and v.mainframe[target])
+                        
+                        if fontString and fontString.SetFont then
+                            local _, size, flags = fontString:GetFont()
+                            fontString:SetFont(fontPath, size, flags or "OUTLINE")
                         end
                     end
                 end,
@@ -119,7 +134,6 @@ DrumTempo.options = {
                     end,
                     get = function() return DrumTempo.db.profile.layout end,
                     set = function(_, v) 
-                        -- CRITICAL FIX: Update the DB so the checkmark stays
                         DrumTempo.db.profile.layout = v
                         DrumTempo:SwitchLayout(v) 
                     end,
@@ -147,12 +161,8 @@ DrumTempo.options = {
                             vf:SetItem(val) 
                         end
                         
-                        if DrumTempo.Layout then
-                            if DrumTempo.Layout.UpdateCount then
-                                DrumTempo.Layout:UpdateCount()
-                            elseif DrumTempo.Layout.UpdateAllCounts then
-                                DrumTempo.Layout:UpdateAllCounts()
-                            end
+                        if DrumTempo.Layout and DrumTempo.Layout.UpdateCount then
+                            DrumTempo.Layout:UpdateCount()
                         end
                     end,
                 },
@@ -207,6 +217,11 @@ function DrumTempo:SetupOptions()
 end
 
 function DrumTempo:OpenOptions()
-    -- Modern way to open options in newer clients (TBC/Retail)
-    Settings.OpenToCategory("DrumTempo")
+    -- Attempt to open the modern WoW settings category
+    if Settings and Settings.OpenToCategory then
+        Settings.OpenToCategory("DrumTempo")
+    else
+        -- Fallback for older interface API
+        InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+    end
 end
