@@ -6,7 +6,7 @@
 
 ---
 
-## 🛠 Features
+##  Features
 
 * **Smart Lockout Tracking:** Automatically detects the Tinnitus debuff and starts a formatted countdown timer.
 * **Drummer Identification:** (Default Layout) Displays the name of the player who last used drums directly on the frame.
@@ -18,7 +18,7 @@
 
 ---
 
-## 🎨 Layout Options
+##  Layout Options
 
 DrumTempo features two distinct visual modes to fit your UI preference:
 
@@ -36,7 +36,7 @@ The "Clean UI" experience. Perfect for minimalists who only want to see what is 
 
 ---
 
-## 🚀 Installation
+##  Installation
 
 1. Download the repository.
 2. Extract the folder into your `World of Warcraft/_classic_/Interface/AddOns/` directory.
@@ -44,13 +44,13 @@ The "Clean UI" experience. Perfect for minimalists who only want to see what is 
 
 ---
 
-## ⌨️ Slash Commands
+##  Slash Commands
 
 * `/drumtempo` or `/dt` - Opens the configuration menu.
 
 ---
 
-## ⚙️ Technical Details
+##  Technical Details
 
 * **Secure Execution:** Built on a `SecureActionButtonTemplate`. The button remains fully functional and clickable during intense combat, even while the UI updates text or desaturation.
 * **Robust Frame Logic:** Version 8.4 includes enhanced logic for "NbItemtext" (Charge Count), ensuring font and position settings apply correctly across all layouts and nested frame structures.
