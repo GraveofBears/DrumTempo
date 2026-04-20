@@ -1,3 +1,7 @@
+# DrumTempo
+**Author:** Gravebear  
+**Category:** TBC Classic WoW Addon
+
 **DrumTempo** is a streamlined World of Warcraft addon designed to optimize the use of Leatherworking Drums. It provides a reactive, single-button interface that tracks usage, identifies drummers, and manages the Tinnitus lockout period with high precision.
 
 ---
@@ -8,15 +12,15 @@
 * **Drummer Identification:** (Default Layout) Displays the name of the player who last used drums directly on the frame.
 * **Dynamic Visuals:** * Greys out (desaturates) the drum icon while you are under the effect of Tinnitus.
     * Features a 30-second sweeping cooldown overlay to track the active buff duration.
-* **Reliable Icon Caching:** Advanced logic ensures your drum icons load correctly on login, preventing the common "Question Mark" bug.
-* **Customization:** Full integration with **LibSharedMedia** and **Ace3** for real-time adjustments to fonts, text sizing, and icon scaling.
-* **Automation:** Optional party/raid chat announcements when you use your drums.
+* **Precision Customization:** Full integration with **LibSharedMedia** and **Ace3**. Adjust font types, sizes, and **vertical offsets (Y-axis)** for every text element in real-time.
+* **Unified Configuration:** A clean, tabbed interface for General Settings, Appearance, and Profiles for easy management.
+* **Automation:** Optional party chat announcements when you use your drums.
 
 ---
 
 ## 🎨 Layout Options
 
-DrumTempo now features two distinct visual modes to fit your UI preference:
+DrumTempo features two distinct visual modes to fit your UI preference:
 
 ### 1. Default Drum Layout
 The full-information experience. Designed for players who want maximum data at a glance.
@@ -48,8 +52,6 @@ The "Clean UI" experience. Perfect for minimalists who only want to see what is 
 
 ## ⚙️ Technical Details
 
-DrumTempo is built on a **SecureActionButtonTemplate**. This is critical for high-end raiding as it ensures your drum button remains functional and clickable even when the addon updates icons, text, or desaturation levels during intense combat.
-
-# DrumTempo
-**Author:** Gravebear  
-**Category:** TBC Classic WoW Addon
+* **Secure Execution:** Built on a `SecureActionButtonTemplate`. The button remains fully functional and clickable during intense combat, even while the UI updates text or desaturation.
+* **Robust Frame Logic:** Version 8.4 includes enhanced logic for "NbItemtext" (Charge Count), ensuring font and position settings apply correctly across all layouts and nested frame structures.
+* **Ace3/SharedMedia:** Utilizes a unified Profile system, allowing you to share or save your custom font and position configurations across multiple characters.
