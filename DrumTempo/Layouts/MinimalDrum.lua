@@ -1,30 +1,77 @@
 -------------------------------------------------------------------------------
--- DrumTempo - Minimal Drum Layout (v1.5)
+-- DrumTempo - Minimal Drum Layout (v2.4)
 -------------------------------------------------------------------------------
 local addonName, addonTable = ...
 local DrumTempo = addonTable.Core or LibStub("AceAddon-3.0"):GetAddon("DrumTempo", true)
 
 local Layout = { 
     name = "Minimal Drum", 
-    frame = nil 
+    frame = nil,
+    lastState = nil,
+    isPulsing = false,
+    clickLockout = 0 
 }
+
+local TINNITUS_ID = 29519 
 
 local function GetLCG()
     return LibStub("LibCustomGlow-1.0", true)
 end
 
+-- Softer "Shine" Effect for "Ready to Use"
+local function TriggerReadyShine(frame)
+    local LCG = GetLCG()
+    if not LCG or not frame then return end
+    
+    -- Stop all existing glows first
+    LCG.PixelGlow_Stop(frame)
+    LCG.AutoCastGlow_Stop(frame)
+    
+    -- ButtonGlow is the Blizzard-style "Proc" shine. 
+    -- It has a very natural fade-out.
+    LCG.ButtonGlow_Start(frame)
+    
+    C_Timer.After(2.5, function() 
+        if frame then LCG.ButtonGlow_Stop(frame) end
+    end)
+end
+
 -------------------------------------------------------------------------------
 -- Visual Logic
 -------------------------------------------------------------------------------
+function Layout:GetDebuffRemaining()
+    for i = 1, 40 do
+        local name, _, _, _, duration, expirationTime, _, _, _, spellId = UnitDebuff("player", i)
+        if not name then break end
+        
+        if spellId == TINNITUS_ID or name == "Tinnitus" then
+            local rem = expirationTime - GetTime()
+            return rem > 0 and rem or 0
+        end
+    end
+    return 0
+end
+
 function Layout:Drummed(drum, drummer)
     if not drum or not self.frame or not self.frame.mainframe then return end
     self.frame:SetCooldown(drum)
     
+    local LCG = GetLCG()
+    if LCG then
+        LCG.ButtonGlow_Stop(self.frame.mainframe)
+        LCG.PixelGlow_Stop(self.frame.mainframe)
+        LCG.AutoCastGlow_Stop(self.frame.mainframe)
+    end
+
     if self.frame.mainframe.texture then
         self.frame.mainframe.texture:SetDesaturated(true)
     end
     
-    self:UpdateCount()
+    self.clickLockout = GetTime() + 2
+    self.lastState = "lockout"
+    self.isPulsing = false
+    
+    C_Timer.After(0.1, function() self:UpdateCount() end)
 end
 
 function Layout:UpdateCount()
@@ -33,38 +80,37 @@ function Layout:UpdateCount()
     
     local itemID = DrumTempo.db.profile.drumwatched
     local count = DrumTempo:GetDrumCount(itemID)
-    
-    -- Update the count
     self.frame:SetItemCount(count)
 
-    -- FORCE VISIBILITY: Ensure the count text is actually shown
-    -- We check the frame AND the mainframe in case it's nested
-    local countText = self.frame.count or (self.frame.mainframe and self.frame.mainframe.count)
-    if countText then 
-        countText:Show() 
+    local debuffRemaining = self:GetDebuffRemaining()
+    
+    local currentlyReady = (count > 0 and debuffRemaining <= 0 and GetTime() > self.clickLockout)
+    local currentState = currentlyReady and "ready" or "lockout"
+    local texture = self.frame.mainframe.texture
+
+    -- 1. THE 5-SECOND PULSE (Softer White Warning)
+    if debuffRemaining > 0 and debuffRemaining <= 5 then
+        if not self.isPulsing then
+            self.isPulsing = true
+            local LCG = GetLCG()
+            if LCG then LCG.AutoCastGlow_Start(self.frame.mainframe, {1, 1, 1, 0.5}) end
+        end
+    elseif self.isPulsing then
+        self.isPulsing = false
+        local LCG = GetLCG()
+        if LCG then LCG.AutoCastGlow_Stop(self.frame.mainframe) end
     end
 
-    -- Color/Grey Logic
-    local isLockout = false
-    if self.frame.mainframe.cooldown then
-        isLockout = self.frame.mainframe.cooldown:GetCooldownDuration() > 0
+    -- 2. THE READY SHINE (Swapped from Sparkle)
+    if currentState == "ready" and self.lastState == "lockout" then
+        TriggerReadyShine(self.frame.mainframe)
     end
     
-    if count > 0 and not isLockout then
-        if self.frame.mainframe.texture:IsDesaturated() then
-            local LCG = GetLCG()
-            if LCG then
-                LCG.AutoCastGlow_Start(self.frame.mainframe, {1, 1, 1, 1})
-                C_Timer.After(0.8, function() 
-                    if self.frame and self.frame.mainframe then
-                        LCG.AutoCastGlow_Stop(self.frame.mainframe) 
-                    end
-                end)
-            end
-        end
-        self.frame.mainframe.texture:SetDesaturated(false)
-    else
-        self.frame.mainframe.texture:SetDesaturated(true)
+    self.lastState = currentState
+
+    -- 3. APPLY VISUAL STATE
+    if texture then
+        texture:SetDesaturated(not currentlyReady)
     end
 end
 
@@ -75,7 +121,6 @@ function Layout:Load()
     self.frame = DrumTempo:GetSingleFrame("MinimalDrum")
     
     if self.frame then
-        -- Hide the fluff
         if self.frame.toptext then self.frame.toptext:Hide() end
         if self.frame.bottomtext then self.frame.bottomtext:Hide() end
 
@@ -83,24 +128,30 @@ function Layout:Load()
             if self.frame and self.frame.mainframe then
                 self.frame:SetItem(DrumTempo.db.profile.drumwatched)
                 self.frame:LoadPos()
-                self.frame.mainframe:Show()
                 
-                -- Ensure count is visible after SetItem potentially hides things
-                local countText = self.frame.count or self.frame.mainframe.count
-                if countText then countText:Show() end
-
-                if self.frame.mainframe.cooldown then
-                    self.frame.mainframe.cooldown:SetScript("OnCooldownDone", function()
-                        self:UpdateCount()
-                    end)
+                if not InCombatLockdown() then
+                    self.frame.mainframe:Show()
                 end
+
+                self.frame.mainframe:SetScript("OnUpdate", function(s, elapsed)
+                    s.timer = (s.timer or 0) + elapsed
+                    if s.timer > 0.1 then 
+                        self:UpdateCount()
+                        s.timer = 0
+                    end
+                end)
 
                 self:UpdateCount()
             end
         end)
         
+        self.frame.mainframe:RegisterEvent("UNIT_AURA")
         self.frame.mainframe:RegisterEvent("BAG_UPDATE")
-        self.frame.mainframe:SetScript("OnEvent", function() self:UpdateCount() end)
+        self.frame.mainframe:SetScript("OnEvent", function(s, event, unit)
+            if event == "BAG_UPDATE" or unit == "player" then 
+                self:UpdateCount() 
+            end
+        end)
     end
 end
 
@@ -108,34 +159,37 @@ function Layout:Unload()
     if self.frame then
         local LCG = GetLCG()
         if LCG and self.frame.mainframe then 
+            LCG.ButtonGlow_Stop(self.frame.mainframe)
             LCG.AutoCastGlow_Stop(self.frame.mainframe) 
         end
 
         if self.frame.mainframe then
+            self.frame.mainframe:SetScript("OnUpdate", nil)
+            self.frame.mainframe:UnregisterEvent("UNIT_AURA")
             self.frame.mainframe:UnregisterEvent("BAG_UPDATE")
             self.frame.mainframe:SetScript("OnEvent", nil)
-            if self.frame.mainframe.cooldown then
-                self.frame.mainframe.cooldown:SetScript("OnCooldownDone", nil)
-            end
         end
 
-        -- Restore for Default view
         if self.frame.toptext then self.frame.toptext:Show() end
         if self.frame.bottomtext then self.frame.bottomtext:Show() end
-        local countText = self.frame.count or (self.frame.mainframe and self.frame.mainframe.count)
-        if countText then countText:Show() end
         
         DrumTempo:ReleaseFrame(self.frame)
         self.frame = nil
+        self.lastState = nil
+        self.isPulsing = false
     end
 end
 
 function Layout:ShowFrame()
-    if self.frame and self.frame.mainframe then self.frame.mainframe:Show() end
+    if self.frame and self.frame.mainframe and not InCombatLockdown() then 
+        self.frame.mainframe:Show() 
+    end
 end
 
 function Layout:HideFrame()
-    if self.frame and self.frame.mainframe then self.frame.mainframe:Hide() end
+    if self.frame and self.frame.mainframe and not InCombatLockdown() then 
+        self.frame.mainframe:Hide() 
+    end
 end
 
 if DrumTempo and DrumTempo.RegisterLayout then
