@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- DrumTempo - Frames (v7.9 - Improved Icon Caching)
+-- DrumTempo - Frames (v8.0 - Persistent Icon Caching)
 -------------------------------------------------------------------------------
 local addonName, addonTable = ...
 local DrumTempo = DrumTempo or addonTable.Core 
@@ -130,9 +130,19 @@ function DrumTempo:CreateSingleFrame(framename)
             btn.texture:SetTexture("Interface\\Icons\\INV_Misc_QuestionMark")
             
             -- Force a cache request by querying a hidden tooltip
-            local scanner = _G["PanaceaScanTooltip"] or CreateFrame("GameTooltip", "PanaceaScanTooltip", nil, "GameTooltipTemplate")
+            local scanner = _G["DrumTempoScanTooltip"] or CreateFrame("GameTooltip", "DrumTempoScanTooltip", nil, "GameTooltipTemplate")
             scanner:SetOwner(WorldFrame, "ANCHOR_NONE")
             scanner:SetHyperlink("item:" .. itemID)
+
+            -- Retry mechanism for high-latency or cold-cache logins
+            local retries = 0
+            local function AttemptRetry()
+                if not RefreshIcon() and retries < 5 then
+                    retries = retries + 1
+                    C_Timer.After(1, AttemptRetry)
+                end
+            end
+            AttemptRetry()
 
             btn:SetScript("OnEvent", function(self, event, id)
                 if id == itemID and RefreshIcon() then

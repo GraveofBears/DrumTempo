@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- DrumTempo - Options (v7.2)
+-- DrumTempo - Options (v8.0)
 -------------------------------------------------------------------------------
 local addonName, addonTable = ...
 local DrumTempo = addonTable.Core or LibStub("AceAddon-3.0"):GetAddon("DrumTempo")
@@ -40,8 +40,6 @@ local function makeFontGroup(displayName, order, fieldKey, sizeKey, frameKey)
                 set = function(_, value)
                     DrumTempo.db.profile[sizeKey] = value
                     for _, v in pairs(DrumTempo.frames) do
-                        -- Map the option key to the actual frame variable
-                        -- "centertext" now controls the "bottomtext" (Debuff Timer)
                         local targetMap = { ["NbItemtext"] = "count", ["centertext"] = "bottomtext" }
                         local target = targetMap[frameKey] or frameKey
                         
@@ -60,7 +58,7 @@ local function makeFontGroup(displayName, order, fieldKey, sizeKey, frameKey)
                 get = function() return DrumTempo.db.profile[fieldKey] or "Fonts\\FRIZQT__.TTF" end,
                 set = function(_, value)
                     local fontPath = (SharedMedia and SharedMedia:Fetch("font", value)) or "Fonts\\FRIZQT__.TTF"
-                    DrumTempo.db.profile[fieldKey] = value
+                     DrumTempo.db.profile[fieldKey] = value
                     
                     for _, v in pairs(DrumTempo.frames) do
                         local targetMap = { ["NbItemtext"] = "count", ["centertext"] = "bottomtext" }
@@ -120,7 +118,11 @@ DrumTempo.options = {
                         return t
                     end,
                     get = function() return DrumTempo.db.profile.layout end,
-                    set = function(_, v) DrumTempo:SwitchLayout(v) end,
+                    set = function(_, v) 
+                        -- CRITICAL FIX: Update the DB so the checkmark stays
+                        DrumTempo.db.profile.layout = v
+                        DrumTempo:SwitchLayout(v) 
+                    end,
                 },
                 drumwatched = {
                     type = "select",
@@ -141,12 +143,10 @@ DrumTempo.options = {
                         if InCombatLockdown() then return end
                         DrumTempo.db.profile.drumwatched = val
                         
-                        -- 1. Update the icons on all frames
                         for _, vf in pairs(DrumTempo.frames) do 
                             vf:SetItem(val) 
                         end
                         
-                        -- 2. Force the active layout to refresh charge counts immediately
                         if DrumTempo.Layout then
                             if DrumTempo.Layout.UpdateCount then
                                 DrumTempo.Layout:UpdateCount()
@@ -202,10 +202,11 @@ function DrumTempo:SetupOptions()
     LibStub("AceConfig-3.0"):RegisterOptionsTable("DrumTempo_Profiles", profiles)
     LibStub("AceConfigDialog-3.0"):AddToBlizOptions("DrumTempo_Profiles", "Profiles", "DrumTempo")
 
-    self:RegisterChatCommand("pdrums", "OpenOptions")
+    self:RegisterChatCommand("drumtempo", "OpenOptions")
+    self:RegisterChatCommand("dt", "OpenOptions")
 end
 
 function DrumTempo:OpenOptions()
-    InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
-    InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
+    -- Modern way to open options in newer clients (TBC/Retail)
+    Settings.OpenToCategory("DrumTempo")
 end

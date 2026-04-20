@@ -2,19 +2,20 @@
 ## Title: DrumTempo
 ## Notes: Track drum cooldowns and Tinnitus.
 ## Author: Gravebear.
-## Version: 1.0
+## Version: 8.0
 ## X-Category: Leatherworking
-## OptionalDeps: Ace3, LibSharedMedia-3.0, ButtonFacade, LibButtonFacade
+## OptionalDeps: Ace3, LibSharedMedia-3.0, LibCustomGlow-1.0
 ## SavedVariables: DrumTempoDB
 
 # Libraries
 Embeds.xml
 
 # Data and Core
-DrumTempo.lua
 DrumData.lua
+DrumTempo.lua
 Frames.lua
 Options.lua
 
 # Layouts
-Layouts\SimpleDrum.lua
+Layouts\DefaultDrum.lua
+Layouts\MinimalDrum.lua
