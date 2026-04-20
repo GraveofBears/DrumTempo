@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- DrumTempo - Options (v8.1)
+-- DrumTempo - Options (v8.4)
 -------------------------------------------------------------------------------
 local addonName, addonTable = ...
 local DrumTempo = addonTable.Core or LibStub("AceAddon-3.0"):GetAddon("DrumTempo")
@@ -24,7 +24,7 @@ end
 -------------------------------------------------------------------------------
 -- Build Font Group
 -------------------------------------------------------------------------------
-local function makeFontGroup(displayName, order, fieldKey, sizeKey, frameKey)
+local function makeFontGroup(displayName, order, fieldKey, sizeKey, yOffsetKey, frameKey)
     return {
         type = "group",
         name = L[displayName],
@@ -46,9 +46,6 @@ local function makeFontGroup(displayName, order, fieldKey, sizeKey, frameKey)
                             ["toptext"]    = "toptext" 
                         }
                         local target = targetMap[frameKey] or frameKey
-                        
-                        -- CRITICAL FIX: Check the base frame AND the mainframe child
-                        -- Addons often nest the 'count' inside the icon frame
                         local fontString = v[target] or (v.mainframe and v.mainframe[target])
                         
                         if fontString and fontString.SetFont then
@@ -58,10 +55,34 @@ local function makeFontGroup(displayName, order, fieldKey, sizeKey, frameKey)
                     end
                 end,
             },
+            yoffset = {
+                type = "range",
+                name = L["Vertical Offset"],
+                order = 2,
+                min = -100, max = 100, step = 1,
+                get = function() return DrumTempo.db.profile[yOffsetKey] or 0 end,
+                set = function(_, value)
+                    DrumTempo.db.profile[yOffsetKey] = value
+                    for _, v in pairs(DrumTempo.frames) do
+                        local targetMap = { 
+                            ["NbItemtext"] = "count", 
+                            ["centertext"] = "bottomtext",
+                            ["toptext"]    = "toptext" 
+                        }
+                        local target = targetMap[frameKey] or frameKey
+                        local fontString = v[target] or (v.mainframe and v.mainframe[target])
+                        
+                        if fontString then
+                            local point, relativeTo, relativePoint, xOfs, _ = fontString:GetPoint()
+                            fontString:SetPoint(point, relativeTo, relativePoint, xOfs, value)
+                        end
+                    end
+                end,
+            },
             fonttype = {
                 type = "select",
                 name = L["Type"],
-                order = 2,
+                order = 3,
                 values = getFontValues,
                 get = function() return DrumTempo.db.profile[fieldKey] or "Fonts\\FRIZQT__.TTF" end,
                 set = function(_, value)
@@ -75,7 +96,6 @@ local function makeFontGroup(displayName, order, fieldKey, sizeKey, frameKey)
                             ["toptext"]    = "toptext" 
                         }
                         local target = targetMap[frameKey] or frameKey
-                        
                         local fontString = v[target] or (v.mainframe and v.mainframe[target])
                         
                         if fontString and fontString.SetFont then
@@ -96,12 +116,12 @@ DrumTempo.options = {
     type = "group",
     name = "DrumTempo",
     handler = DrumTempo,
+    childGroups = "tab", -- This forces General, Appearance, and Profiles into Tabs
     args = {
         general = {
             type = "group",
             name = L["General Settings"],
             order = 1,
-            inline = true,
             args = {
                 lock = {
                     type = "toggle",
@@ -123,10 +143,20 @@ DrumTempo.options = {
                     get = function() return DrumTempo.db.profile.announceparty end,
                     set = function(_, value) DrumTempo.db.profile.announceparty = value end,
                 },
+                hidegrouped = {
+                    type = "toggle",
+                    name = L["Hide When Solo"],
+                    order = 3,
+                    get = function() return DrumTempo.db.profile.Hide end,
+                    set = function(_, value) 
+                        DrumTempo.db.profile.Hide = value 
+                        DrumTempo:SetAlpha()
+                    end,
+                },
                 layout = {
                     type = "select",
                     name = L["Layout Choice"],
-                    order = 3,
+                    order = 4,
                     values = function()
                         local t = {}
                         for k, v in pairs(DrumTempo.Layouts) do t[k] = k end
@@ -141,7 +171,7 @@ DrumTempo.options = {
                 drumwatched = {
                     type = "select",
                     name = L["Drums to Watch"],
-                    order = 4,
+                    order = 5,
                     values = function()
                         local t = {}
                         if DrumTempo.Drums then
@@ -156,24 +186,12 @@ DrumTempo.options = {
                     set = function(_, val)
                         if InCombatLockdown() then return end
                         DrumTempo.db.profile.drumwatched = val
-                        
                         for _, vf in pairs(DrumTempo.frames) do 
                             vf:SetItem(val) 
                         end
-                        
                         if DrumTempo.Layout and DrumTempo.Layout.UpdateCount then
                             DrumTempo.Layout:UpdateCount()
                         end
-                    end,
-                },
-                hidegrouped = {
-                    type = "toggle",
-                    name = L["Hide When Solo"],
-                    order = 5,
-                    get = function() return DrumTempo.db.profile.Hide end,
-                    set = function(_, value) 
-                        DrumTempo.db.profile.Hide = value 
-                        DrumTempo:SetAlpha()
                     end,
                 },
             },
@@ -196,32 +214,39 @@ DrumTempo.options = {
                         end
                     end,
                 },
-                toptext    = makeFontGroup("Drummer Name", 2, "topfont",    "topsize",    "toptext"),
-                centertext = makeFontGroup("Debuff Timer", 3, "centerfont", "centersize", "centertext"),
-                counttext  = makeFontGroup("Charges Count", 4, "countfont",  "countsize",  "NbItemtext"),
+                fontHeader = {
+                    type = "header",
+                    name = L["Font & Positioning"],
+                    order = 2,
+                },
+                toptext    = makeFontGroup("Drummer Name", 3, "topfont",    "topsize",    "topY",    "toptext"),
+                centertext = makeFontGroup("Debuff Timer", 4, "centerfont", "centersize", "centerY", "centertext"),
+                counttext  = makeFontGroup("Charges Count", 5, "countfont",  "countsize",  "countY",  "NbItemtext"),
             },
         },
     },
 }
 
 function DrumTempo:SetupOptions()
+    -- Inject Profile options as a tab
+    self.options.args.profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
+    self.options.args.profiles.name = L["Profiles"]
+    self.options.args.profiles.order = 3
+
+    -- Register the main table
     LibStub("AceConfig-3.0"):RegisterOptionsTable("DrumTempo", self.options)
-    self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("DrumTempo", "DrumTempo")
     
-    local profiles = LibStub("AceDBOptions-3.0"):GetOptionsTable(self.db)
-    LibStub("AceConfig-3.0"):RegisterOptionsTable("DrumTempo_Profiles", profiles)
-    LibStub("AceConfigDialog-3.0"):AddToBlizOptions("DrumTempo_Profiles", "Profiles", "DrumTempo")
+    -- Register only the main category to keep the sidebar clean
+    self.optionsFrame = LibStub("AceConfigDialog-3.0"):AddToBlizOptions("DrumTempo", "DrumTempo")
 
     self:RegisterChatCommand("drumtempo", "OpenOptions")
     self:RegisterChatCommand("dt", "OpenOptions")
 end
 
 function DrumTempo:OpenOptions()
-    -- Attempt to open the modern WoW settings category
     if Settings and Settings.OpenToCategory then
         Settings.OpenToCategory("DrumTempo")
     else
-        -- Fallback for older interface API
         InterfaceOptionsFrame_OpenToCategory(self.optionsFrame)
     end
 end
