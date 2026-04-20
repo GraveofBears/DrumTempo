@@ -21,7 +21,7 @@ DrumTempo now features two distinct visual modes to fit your UI preference:
 ### 1. Default Drum Layout
 The full-information experience. Designed for players who want maximum data at a glance.
 * **Top Text:** Displays the name of the person who just drummed.
-* **Center Text:** Shows the precise M:SS countdown of your Tinnitus lockout.
+* **Debuff Text:** Shows the precise M:SS countdown of your Tinnitus lockout.
 * **Charge Tracker:** Displays remaining drum stacks in the bottom right.
 
 ### 2. Minimal Drum Layout
