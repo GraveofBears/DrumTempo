@@ -16,16 +16,21 @@ local Layout = {
 function Layout:Drummed(drum, drummer)
     if not drum or not self.frame or not self.frame.mainframe then return end
     
-    -- 1. Start the 30s visual cooldown clock (the sweeping overlay)
+    -- Start visual cooldown
     self.frame:SetCooldown(drum)
     
-    -- 2. Display Drummer Name on Top
+    -- Show drummer name
     local name = DrumTempo:Ambiguate(drummer)
     self.frame:SetTopText(name)
 
-    -- Note: Name clearing is handled by Frames.lua (lockout end) 
-    -- or DrumTempo.lua (debuff removal).
-    
+    -- ✅ NEW: If already debuffed, force lockout to sync visuals
+    if DrumTempo.hasTinnitus and DrumTempo.tinnitusEndTime then
+        local remaining = DrumTempo.tinnitusEndTime - GetTime()
+        if remaining > 0 then
+            self.frame:SetLockout(remaining)
+        end
+    end
+
     self:UpdateCount()
 end
 
