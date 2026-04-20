@@ -53,5 +53,5 @@ The "Clean UI" experience. Perfect for minimalists who only want to see what is 
 ##  Technical Details
 
 * **Secure Execution:** Built on a `SecureActionButtonTemplate`. The button remains fully functional and clickable during intense combat, even while the UI updates text or desaturation.
-* **Robust Frame Logic:** Version 8.4 includes enhanced logic for "NbItemtext" (Charge Count), ensuring font and position settings apply correctly across all layouts and nested frame structures.
+* **Robust Frame Logic:** Includes enhanced logic for "NbItemtext" (Charge Count), ensuring font and position settings apply correctly across all layouts and nested frame structures.
 * **Ace3/SharedMedia:** Utilizes a unified Profile system, allowing you to share or save your custom font and position configurations across multiple characters.
