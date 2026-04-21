@@ -158,6 +158,10 @@ function DrumTempo:CreateSingleFrame(framename)
     end
     
     function Drum:SetLockout(duration)
+        -- If the layout manages its own lockout (e.g. MinimalDrum's OnUpdate loop),
+        -- skip overwriting OnUpdate here. The layout will handle greying/re-enabling.
+        if Drum.selfManagesLockout then return end
+
         local startTime = GetTime()
         local lockoutDuration = duration or 120
         

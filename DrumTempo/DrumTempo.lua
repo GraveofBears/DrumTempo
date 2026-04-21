@@ -1,5 +1,5 @@
 -------------------------------------------------------------------------------
--- DrumTempo - Main Addon File (v8.1 - Tinnitus Fix)
+-- DrumTempo - Main Addon File (v8.0)
 -------------------------------------------------------------------------------
 local addonName, addonTable = ...
 local DrumTempo = LibStub("AceAddon-3.0"):NewAddon("DrumTempo", 
@@ -11,14 +11,10 @@ local DrumTempo = LibStub("AceAddon-3.0"):NewAddon("DrumTempo",
 addonTable.Core = DrumTempo
 _G["DrumTempo"] = DrumTempo 
 
-DrumTempo.version = "8.1"
+DrumTempo.version = "8.0"
 DrumTempo.Layouts = {}
 DrumTempo.Layout  = nil
 DrumTempo.frames  = DrumTempo.frames or {} 
-
--- ✅ NEW: Authoritative Tinnitus State
-DrumTempo.hasTinnitus = false
-DrumTempo.tinnitusEndTime = 0
 
 -------------------------------------------------------------------------------
 -- Database Defaults
@@ -26,7 +22,7 @@ DrumTempo.tinnitusEndTime = 0
 local DB_DEFAULTS = {
     profile = {
         layout        = "Default Drum",
-        drumwatched   = 29529,
+        drumwatched   = 29529, -- Greater Drums of Battle
         locked        = true,
         scale         = 1,
         announceparty = true, 
@@ -37,6 +33,11 @@ local DB_DEFAULTS = {
         topsize       = 10,
         centersize    = 16,
         countsize     = 12,
+        -- DefaultDrum visibility toggles
+        showDrummerName = true,
+        showDebuffTimer = true,
+        showChargeCount = true,
+        showReadyGlow   = true,
     }
 }
 
@@ -44,12 +45,15 @@ local DB_DEFAULTS = {
 -- Lifecycle
 -------------------------------------------------------------------------------
 function DrumTempo:OnInitialize()
+    -- Initialize Database
     self.db = LibStub("AceDB-3.0"):New("DrumTempoDB", DB_DEFAULTS, true)
     
+    -- Load Drum Data from DrumData.lua
     if addonTable.DrumsData then
         self.Drums = addonTable.DrumsData
     end
     
+    -- Register Layouts that loaded before the Core
     if addonTable.DefaultDrumLayout then
         self:RegisterLayout(addonTable.DefaultDrumLayout)
     end    
@@ -58,80 +62,22 @@ function DrumTempo:OnInitialize()
         self:RegisterLayout(addonTable.MinimalDrumLayout)
     end    
 
+    -- Initialize Options
     if self.SetupOptions then 
         self:SetupOptions() 
     end
 end
 
 function DrumTempo:OnEnable()
+    -- Apply the saved or default layout
     self:SwitchLayout(self.db.profile.layout)
     
+    -- Register Game Events
     self:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
     self:RegisterEvent("PLAYER_REGEN_ENABLED")
     self:RegisterEvent("GROUP_ROSTER_UPDATE", "SetAlpha")
-
-    -- ✅ NEW: Aura + Safety Polling
-    self:RegisterEvent("UNIT_AURA")
-    self:ScheduleRepeatingTimer(function()
-        self:CheckTinnitus()
-    end, 0.5)
-
+    
     self:SetAlpha()
-end
-
--------------------------------------------------------------------------------
--- ✅ NEW: AUTHORITATIVE TINNITUS CHECK
--------------------------------------------------------------------------------
-function DrumTempo:CheckTinnitus()
-    local name, _, _, _, duration, expirationTime = AuraUtil.FindAuraByName("Tinnitus", "player")
-
-    if name and expirationTime then
-        local remaining = expirationTime - GetTime()
-
-        if not self.hasTinnitus or math.abs((self.tinnitusEndTime or 0) - expirationTime) > 0.3 then
-            self.hasTinnitus = true
-            self.tinnitusEndTime = expirationTime
-
-            for _, frame in pairs(self.frames) do
-                if frame.SetLockout then
-                    frame:SetLockout(remaining)
-                end
-            end
-        end
-    else
-        if self.hasTinnitus then
-            self.hasTinnitus = false
-            self.tinnitusEndTime = 0
-
-            for _, frame in pairs(self.frames) do
-                if frame.mainframe then
-                    frame.mainframe:SetScript("OnUpdate", nil)
-
-                    if frame.bottomtext then frame.bottomtext:SetText("") end
-                    if frame.toptext then frame.toptext:SetText("") end
-
-                    if frame.mainframe.texture then
-                        frame.mainframe.texture:SetDesaturated(false)
-                        frame.mainframe.texture:SetAlpha(1)
-                    end
-
-                    if not InCombatLockdown() then
-                        frame:SetItem(self.db.profile.drumwatched)
-                    end
-                end
-            end
-
-            if self.Layout and self.Layout.UpdateCount then
-                self.Layout:UpdateCount()
-            end
-        end
-    end
-end
-
-function DrumTempo:UNIT_AURA(unit)
-    if unit == "player" then
-        self:CheckTinnitus()
-    end
 end
 
 -------------------------------------------------------------------------------
@@ -140,24 +86,19 @@ end
 function DrumTempo:COMBAT_LOG_EVENT_UNFILTERED()
     local _, subevent, _, _, sourceName, _, _, destGUID, _, _, _, spellId = CombatLogGetCurrentEventInfo()
 
-    -- VISUAL: Drum Cast
+    -- 1. VISUAL: Drum Cast Success (Any player in group)
     if subevent == "SPELL_CAST_SUCCESS" then
         local drum = self:GetDrumBySpellID(spellId)
         if drum then
             local name = self:Ambiguate(sourceName)
             
+            -- Update layout visuals and drummer name display for everyone
             if self.Layout and self.Layout.Drummed then
                 self.Layout:Drummed(drum, name)
             end
 
-            -- If YOU cast it
+            -- Party Announcement (only when YOU cast)
             if name == UnitName("player") then
-                for _, frame in pairs(self.frames) do
-                    if frame.SetLockout then 
-                        frame:SetLockout(120) 
-                    end
-                end
-
                 if self.db.profile.announceparty and GetNumGroupMembers() > 0 then
                     local itemlink = select(2, GetItemInfo(drum.item))
                     local channel = IsInRaid() and "RAID" or "PARTY"
@@ -167,40 +108,45 @@ function DrumTempo:COMBAT_LOG_EVENT_UNFILTERED()
         end
     end
 
-    -- Keep original Tinnitus handling (harmless fallback)
+    -- 2. LOCKOUT: Tinnitus applied to YOU (SpellID: 29519)
+    -- This fires whether YOU drummed or SOMEONE ELSE drummed.
+    -- This is the single source of truth for the lockout state.
     if destGUID == UnitGUID("player") and spellId == 29519 then
         if subevent == "SPELL_AURA_APPLIED" or subevent == "SPELL_AURA_REFRESH" then
             for _, frame in pairs(self.frames) do
                 if frame.SetLockout then
-                    frame:SetLockout(120) 
+                    frame:SetLockout(120)
                 end
             end
         elseif subevent == "SPELL_AURA_REMOVED" then
+            -- Tinnitus gone: Clear timers, names, and desaturation
             for _, frame in pairs(self.frames) do
                 if frame.mainframe then
                     frame.mainframe:SetScript("OnUpdate", nil)
+                    
                     if frame.bottomtext then frame.bottomtext:SetText("") end
                     if frame.toptext then frame.toptext:SetText("") end
+                    
                     if frame.mainframe.texture then 
                         frame.mainframe.texture:SetDesaturated(false) 
                     end
+                    
                     if not InCombatLockdown() then
                         frame:SetItem(self.db.profile.drumwatched)
                     end
                 end
             end
-
+            
+            -- Refresh Layout Glow/Visuals immediately after lockout
             if self.Layout and self.Layout.UpdateCount then
                 self.Layout:UpdateCount()
             end
         end
     end
-
-    -- ✅ CRITICAL: Always verify actual state
-    self:CheckTinnitus()
 end
 
 function DrumTempo:PLAYER_REGEN_ENABLED()
+    -- Out of combat recovery: ensure icons are restored if they were stuck
     for _, frame in pairs(self.frames) do
         if frame and frame.mainframe then
             if not frame.mainframe:GetScript("OnUpdate") then
@@ -247,6 +193,7 @@ end
 
 function DrumTempo:SetAlpha()
     if not self.Layout then return end
+    -- Hide frame if user has "Hide when Solo" enabled
     if self.db.profile.Hide and GetNumGroupMembers() == 0 then
         self.Layout:HideFrame()
     else
@@ -267,6 +214,7 @@ function DrumTempo:SwitchLayout(name)
         self.Layout:Unload() 
     end
 
+    -- Change the fallback to "Default Drum"
     self.Layout = self.Layouts[name] or self.Layouts["Default Drum"]
 
     if self.Layout and self.Layout.Load then 

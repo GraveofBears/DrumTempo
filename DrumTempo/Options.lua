@@ -214,14 +214,71 @@ DrumTempo.options = {
                         end
                     end,
                 },
+                visHeader = {
+                    type = "header",
+                    name = L["Default Layout Visibility"],
+                    order = 2,
+                },
+                showDrummerName = {
+                    type = "toggle",
+                    name = L["Show Drummer Name"],
+                    desc = L["Display the name of whoever used drums above the icon"],
+                    order = 3,
+                    get = function() return DrumTempo.db.profile.showDrummerName end,
+                    set = function(_, value)
+                        DrumTempo.db.profile.showDrummerName = value
+                        if DrumTempo.Layout and DrumTempo.Layout.ApplyVisibility then
+                            DrumTempo.Layout:ApplyVisibility()
+                        end
+                    end,
+                },
+                showDebuffTimer = {
+                    type = "toggle",
+                    name = L["Show Debuff Timer"],
+                    desc = L["Display the Tinnitus countdown in red below the icon"],
+                    order = 4,
+                    get = function() return DrumTempo.db.profile.showDebuffTimer end,
+                    set = function(_, value)
+                        DrumTempo.db.profile.showDebuffTimer = value
+                        if DrumTempo.Layout and DrumTempo.Layout.ApplyVisibility then
+                            DrumTempo.Layout:ApplyVisibility()
+                        end
+                    end,
+                },
+                showChargeCount = {
+                    type = "toggle",
+                    name = L["Show Charge Count"],
+                    desc = L["Display how many drums you have in the corner of the icon"],
+                    order = 5,
+                    get = function() return DrumTempo.db.profile.showChargeCount end,
+                    set = function(_, value)
+                        DrumTempo.db.profile.showChargeCount = value
+                        if DrumTempo.Layout and DrumTempo.Layout.ApplyVisibility then
+                            DrumTempo.Layout:ApplyVisibility()
+                        end
+                        if DrumTempo.Layout and DrumTempo.Layout.UpdateCount then
+                            DrumTempo.Layout:UpdateCount()
+                        end
+                    end,
+                },
+                showReadyGlow = {
+                    type = "toggle",
+                    name = L["Ready Glow Effect"],
+                    desc = L["Flash a glow on the icon when Tinnitus expires and drums are ready again"],
+                    order = 6,
+                    get = function() return DrumTempo.db.profile.showReadyGlow end,
+                    set = function(_, value)
+                        DrumTempo.db.profile.showReadyGlow = value
+                    end,
+                },
                 fontHeader = {
                     type = "header",
                     name = L["Font & Positioning"],
-                    order = 2,
+                    order = 7,
                 },
-                toptext    = makeFontGroup("Drummer Name", 3, "topfont",    "topsize",    "topY",    "toptext"),
-                centertext = makeFontGroup("Debuff Timer", 4, "centerfont", "centersize", "centerY", "centertext"),
-                counttext  = makeFontGroup("Charges Count", 5, "countfont",  "countsize",  "countY",  "NbItemtext"),
+                toptext    = makeFontGroup("Drummer Name", 8,  "topfont",    "topsize",    "topY",    "toptext"),
+                centertext = makeFontGroup("Debuff Timer", 9,  "centerfont", "centersize", "centerY", "centertext"),
+                counttext  = makeFontGroup("Charges Count", 10, "countfont",  "countsize",  "countY",  "NbItemtext"),
             },
         },
     },

@@ -54,8 +54,10 @@ end
 
 function Layout:Drummed(drum, drummer)
     if not drum or not self.frame or not self.frame.mainframe then return end
+    -- Start the 30s visual cooldown swipe
     self.frame:SetCooldown(drum)
     
+    -- Stop any "ready" glows immediately
     local LCG = GetLCG()
     if LCG then
         LCG.ButtonGlow_Stop(self.frame.mainframe)
@@ -63,13 +65,21 @@ function Layout:Drummed(drum, drummer)
         LCG.AutoCastGlow_Stop(self.frame.mainframe)
     end
 
-    if self.frame.mainframe.texture then
-        self.frame.mainframe.texture:SetDesaturated(true)
-    end
-    
+    -- Set a brief click lockout so we can't double-fire before Tinnitus lands
     self.clickLockout = GetTime() + 2
     self.lastState = "lockout"
     self.isPulsing = false
+    
+    -- Grey out immediately; UpdateCount's OnUpdate loop will manage the full lockout
+    -- from here via GetDebuffRemaining(), so we do NOT call frame:SetLockout() here.
+    if self.frame.mainframe.texture then
+        self.frame.mainframe.texture:SetDesaturated(true)
+    end
+
+    -- Disable clicking without touching the OnUpdate loop
+    if not InCombatLockdown() then
+        self.frame.mainframe:SetAttribute("item", nil)
+    end
     
     C_Timer.After(0.1, function() self:UpdateCount() end)
 end
@@ -112,6 +122,18 @@ function Layout:UpdateCount()
     if texture then
         texture:SetDesaturated(not currentlyReady)
     end
+    
+    -- Restore or clear the item attribute so the button is only clickable when ready
+    if not InCombatLockdown() then
+        if currentlyReady then
+            local itemID = DrumTempo.db.profile.drumwatched
+            if self.frame.mainframe:GetAttribute("item") == nil then
+                self.frame.mainframe:SetAttribute("item", "item:" .. itemID)
+            end
+        else
+            self.frame.mainframe:SetAttribute("item", nil)
+        end
+    end
 end
 
 -------------------------------------------------------------------------------
@@ -121,6 +143,9 @@ function Layout:Load()
     self.frame = DrumTempo:GetSingleFrame("MinimalDrum")
     
     if self.frame then
+        -- Tell Frames.lua not to overwrite our OnUpdate with its own lockout script
+        self.frame.selfManagesLockout = true
+
         if self.frame.toptext then self.frame.toptext:Hide() end
         if self.frame.bottomtext then self.frame.bottomtext:Hide() end
 
@@ -157,6 +182,8 @@ end
 
 function Layout:Unload()
     if self.frame then
+        -- Re-enable standard lockout handling for other layouts
+        self.frame.selfManagesLockout = false
         local LCG = GetLCG()
         if LCG and self.frame.mainframe then 
             LCG.ButtonGlow_Stop(self.frame.mainframe)
