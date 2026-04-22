@@ -1,3 +1,5 @@
+<img src="https://noobtrap.eu/images/crystallights/drumtempheader.png">
+
 # DrumTempo
 
 A World of Warcraft addon for tracking Leatherworking drums — cooldowns, debuffs, and raid coordination — through a clean, movable icon on your screen.
