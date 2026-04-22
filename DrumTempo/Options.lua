@@ -136,17 +136,26 @@ DrumTempo.options = {
                         end
                     end,
                 },
-                announce = {
+                announceparty = {
                     type = "toggle",
                     name = L["Announce in Party"],
+                    desc = L["Post a message to party chat when you use drums"],
                     order = 2,
                     get = function() return DrumTempo.db.profile.announceparty end,
                     set = function(_, value) DrumTempo.db.profile.announceparty = value end,
                 },
+                announceraid = {
+                    type = "toggle",
+                    name = L["Announce in Raid"],
+                    desc = L["Post a message to raid chat when you use drums"],
+                    order = 3,
+                    get = function() return DrumTempo.db.profile.announceraid end,
+                    set = function(_, value) DrumTempo.db.profile.announceraid = value end,
+                },
                 hidegrouped = {
                     type = "toggle",
                     name = L["Hide When Solo"],
-                    order = 3,
+                    order = 4,
                     get = function() return DrumTempo.db.profile.Hide end,
                     set = function(_, value) 
                         DrumTempo.db.profile.Hide = value 
@@ -156,7 +165,7 @@ DrumTempo.options = {
                 layout = {
                     type = "select",
                     name = L["Layout Choice"],
-                    order = 4,
+                    order = 5,
                     values = function()
                         local t = {}
                         for k, v in pairs(DrumTempo.Layouts) do t[k] = k end
@@ -171,7 +180,7 @@ DrumTempo.options = {
                 drumwatched = {
                     type = "select",
                     name = L["Drums to Watch"],
-                    order = 5,
+                    order = 6,
                     values = function()
                         local t = {}
                         if DrumTempo.Drums then

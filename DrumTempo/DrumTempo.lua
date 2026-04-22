@@ -25,7 +25,8 @@ local DB_DEFAULTS = {
         drumwatched   = 29529, -- Greater Drums of Battle
         locked        = true,
         scale         = 1,
-        announceparty = true, 
+        announceparty = true,  -- party announcement (default on)
+        announceraid  = false, -- raid announcement (default off)
         Hide          = false,
         topfont       = "Fonts\\FRIZQT__.TTF",
         centerfont    = "Fonts\\FRIZQT__.TTF",
@@ -52,6 +53,16 @@ function DrumTempo:OnInitialize()
     if addonTable.DrumsData then
         self.Drums = addonTable.DrumsData
     end
+
+    -- Migration: ensure new profile keys exist for players who logged in before
+    -- these defaults were added (AceDB only applies defaults to missing saved vars
+    -- on a completely fresh profile, not to existing ones).
+    local p = self.db.profile
+    if p.showDrummerName == nil then p.showDrummerName = true end
+    if p.showDebuffTimer == nil then p.showDebuffTimer = true end
+    if p.showChargeCount == nil then p.showChargeCount = true end
+    if p.showReadyGlow   == nil then p.showReadyGlow   = true end
+    if p.announceraid    == nil then p.announceraid    = false end
     
     -- Register Layouts that loaded before the Core
     if addonTable.DefaultDrumLayout then
@@ -97,12 +108,15 @@ function DrumTempo:COMBAT_LOG_EVENT_UNFILTERED()
                 self.Layout:Drummed(drum, name)
             end
 
-            -- Party Announcement (only when YOU cast)
+            -- Party/Raid Announcement (only when YOU cast)
             if name == UnitName("player") then
-                if self.db.profile.announceparty and GetNumGroupMembers() > 0 then
-                    local itemlink = select(2, GetItemInfo(drum.item))
-                    local channel = IsInRaid() and "RAID" or "PARTY"
-                    SendChatMessage("++ " .. (itemlink or "Drums") .. " used!", channel)
+                local itemlink = select(2, GetItemInfo(drum.item))
+                local msg = "++ " .. (itemlink or "Drums") .. " used!"
+                if IsInRaid() then
+                    if self.db.profile.announceraid  then SendChatMessage(msg, "RAID")  end
+                    if self.db.profile.announceparty then SendChatMessage(msg, "PARTY") end
+                elseif GetNumGroupMembers() > 0 then
+                    if self.db.profile.announceparty then SendChatMessage(msg, "PARTY") end
                 end
             end
         end
