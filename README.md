@@ -16,11 +16,11 @@ DrumTempo works correctly whether **you** use the drums or a **party/raid member
 
 | Drum | Effect Duration |
 |---|---|
-| Greater Drums of Battle | 30 seconds |
-| Greater Drums of War | 30 seconds |
-| Greater Drums of Speed | 30 seconds |
-| Greater Drums of Restoration | 15 seconds |
-| Greater Drums of Panic | 2 seconds |
+| Drums of Battle | 30 seconds |
+| Drums of War | 30 seconds |
+| Drums of Speed | 30 seconds |
+| Drums of Restoration | 15 seconds |
+| Drums of Panic | 2 seconds |
 
 All drums share the same 2-minute Tinnitus lockout.
 
