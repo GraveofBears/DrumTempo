@@ -1,4 +1,4 @@
-<img src="https://noobtrap.eu/images/crystallights/drumtempheader.jpg">
+<img src="https://noobtrap.eu/images/crystallights/drumtempoheader.jpg">
 
 # DrumTempo
 
