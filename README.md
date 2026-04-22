@@ -137,23 +137,5 @@ Full AceDB profile management — create, copy, delete, and switch between profi
 
 ---
 
-## Dependencies
-
-**Required**
-- AceAddon-3.0
-- AceEvent-3.0
-- AceConsole-3.0
-- AceTimer-3.0
-- AceDB-3.0
-- AceDBOptions-3.0
-- AceConfig-3.0
-- AceConfigDialog-3.0
-
-**Optional**
-- LibSharedMedia-3.0 — enables additional font choices in the appearance options
-- LibCustomGlow-1.0 — enables the ready glow and warning pulse effects; without this library the glows are silently skipped and everything else works normally
-
----
-
 Author: Gravebear
 Category: TBC Classic WoW Addon
