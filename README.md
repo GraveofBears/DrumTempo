@@ -44,7 +44,7 @@ When Tinnitus expires the icon returns to full color and optionally plays a glow
 
 ### Minimal Drum
 
-A clean, no-text layout. The icon is the only element — it greys out when you have Tinnitus and becomes clickable again when the debuff ends. A white pulse glow starts when 5 seconds remain on the debuff as an early warning, and a ready glow fires when it's fully expired. No text is ever shown.
+A clean, no-text layout. The icon is the only element — it greys out when you have Tinnitus and becomes clickable again when the debuff ends. A white pulse glow starts when 5 seconds remain on the debuff as an early warning, and a ready glow fires when it's fully expired. 
 
 ---
 
@@ -86,7 +86,7 @@ Open the options panel with `/dt` or `/drumtempo`, or through the standard Inter
 | Announce in Party | On | Posts the drum item link to party or raid chat when you use drums. |
 | Hide When Solo | Off | Hides the icon entirely when you are not in a party or raid. |
 | Layout Choice | Default Drum | Switches between Default Drum and Minimal Drum layouts. Takes effect immediately. |
-| Drums to Watch | Greater Drums of Battle | Which drum item the icon displays and tracks charges for. |
+| Drums to Watch | Drums of Battle | Which drum item the icon displays and tracks charges for. |
 
 ### Appearance
 
