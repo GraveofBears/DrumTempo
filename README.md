@@ -62,7 +62,7 @@ A clean, no-text layout. The icon is the only element — it greys out when you 
 
 **Ready glow** — When Tinnitus expires and drums are available again, a Blizzard-style proc shine plays on the icon to draw your eye.
 
-**Party announcement** — When you use drums, the addon can automatically post the item link to party or raid chat so your group knows drums were used and the next window is starting.
+**Party or Raid announcements** — When you use drums, the addon can automatically post the item link to party or raid chat so your group knows drums were used and the Tinnitus debuff is active so they dont waste their drums.
 
 **Hide when solo** — Optionally hide the button entirely when you are not in a group.
 
