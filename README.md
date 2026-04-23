@@ -83,7 +83,8 @@ Open the options panel with `/dt` or `/drumtempo`, or through the standard Inter
 | Setting | Default | Description |
 |---|---|---|
 | Lock Drums | On | Locks the icon in place. Turn off to drag it to a new position. |
-| Announce in Party | On | Posts the drum item link to party or raid chat when you use drums. |
+| Announce in Party | On | Posts the drum item link to party chat when you use drums. |
+| Announce in Raid | Off | Posts the drum item link to raid chat when you use drums. |
 | Hide When Solo | Off | Hides the icon entirely when you are not in a party or raid. |
 | Layout Choice | Default Drum | Switches between Default Drum and Minimal Drum layouts. Takes effect immediately. |
 | Drums to Watch | Drums of Battle | Which drum item the icon displays and tracks charges for. |
